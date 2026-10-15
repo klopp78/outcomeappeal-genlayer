@@ -1,0 +1,11 @@
+node_modules/
+.vinext/
+.wrangler/
+dist/
+.next/
+out/
+.sites/
+contracts/__pycache__/
+*.pyc
+.env
+.env.*
