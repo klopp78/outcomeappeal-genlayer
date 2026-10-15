@@ -1,0 +1,35 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="description" content="Challengeable consensus rulings for disputed public outcomes on GenLayer." />
+    <title>OutcomeAppeal for GenLayer</title>
+    <script type="module" src="/main.ts"></script>
+  </head>
+  <body>
+    <header class="topbar">
+      <a class="brand" href="#">OutcomeAppeal <span>GenLayer</span></a>
+      <div class="top-actions"><span class="network"><i></i> STUDIONET</span><button id="connect">Connect wallet</button></div>
+    </header>
+    <main>
+      <section class="intro">
+        <div><p class="eyebrow">OUTCOME RESOLUTION / APPEAL COURT</p><h1>Let disputed outcomes be challenged before they become final.</h1><p class="lede">Register evidence, obtain a consensus assessment, admit counterevidence during a real on-chain window, and finalize a durable ruling receipt.</p></div>
+        <ol class="steps"><li class="active">01 Case</li><li>02 Assess</li><li>03 Appeal</li><li>04 Ruling</li></ol>
+      </section>
+      <section class="workspace">
+        <nav class="tabs"><button class="tab active" data-tab="case">Register case</button><button class="tab" data-tab="assess">Assess</button><button class="tab" data-tab="appeal">Challenge & resolve</button><button class="tab" data-tab="ruling">Finalize & inspect</button></nav>
+        <div class="grid">
+          <div class="panel">
+            <form id="case" class="view active"><h2>Register a disputed public outcome</h2><p class="sub">Two rendered sources are committed as a baseline before any ruling exists.</p><div class="fields"><label>Case title<input id="title" value="Disputed public outcome" /></label><label>Challenge window (seconds)<input id="window" value="3600" inputmode="numeric" /></label><label class="wide">Claimed outcome<input id="outcome" value="The stated public outcome is supported by the submitted evidence." /></label><label class="wide">Primary public source<input id="primary" value="https://www.genlayer.com/" /></label><label class="wide">Corroborating public source<input id="corroborating" value="https://docs.genlayer.com/" /></label></div><button class="primary" type="submit">Register case on GenLayer</button></form>
+            <form id="assess" class="view"><h2>Run a consensus assessment</h2><p class="sub">Validators compare the registered baseline with fresh evidence and issue an <code>asm_*</code> receipt.</p><div class="fields"><label class="wide">Case ID<input id="assess-case" placeholder="case_..." /></label><label class="wide">Fresh evidence URL<input id="assessment-evidence" value="https://docs.genlayer.com/" /></label></div><button class="primary" type="submit">Assess case</button></form>
+            <form id="appeal" class="view"><h2>Challenge and resolve the assessment</h2><p class="sub">The contract only accepts a challenge before its stored deadline, then re-evaluates original evidence and counterevidence.</p><div class="fields"><label class="wide">Case ID<input id="challenge-case" placeholder="case_..." /></label><label class="wide">Assessment ID<input id="challenge-assessment" placeholder="asm_..." /></label><label class="wide">Counterevidence URL<input id="counterevidence" value="https://www.genlayer.com/" /></label><label class="wide">Challenge ID (for resolution)<input id="resolve-challenge" placeholder="chg_..." /></label></div><div class="button-row"><button type="submit">Submit challenge</button><button id="resolve" class="primary" type="button">Resolve challenge</button></div></form>
+            <form id="ruling" class="view"><h2>Finalize and inspect an immutable ruling</h2><p class="sub">A ruling is produced only after the appeal resolves or an unchallenged window closes.</p><div class="fields"><label class="wide">Case ID<input id="finalize-case" placeholder="case_..." /></label><label>Record type<select id="record-type"><option value="get_case">Case</option><option value="get_assessment">Assessment</option><option value="get_challenge">Challenge</option><option value="get_ruling">Ruling</option></select></label><label>Record ID<input id="record-id" placeholder="case_, asm_, chg_, or rul_..." /></label></div><div class="button-row"><button id="finalize" class="primary" type="button">Finalize ruling</button><button id="read" type="button">Read on-chain record</button></div></form>
+          </div>
+          <aside class="receipt"><div class="receipt-head"><span>CONSENSUS RECEIPT</span><b id="phase">READY</b></div><dl><div><dt>Contract</dt><dd id="short-address">0x6c81...Daea</dd></div><div><dt>Case</dt><dd id="case-id">-</dd></div><div><dt>Assessment</dt><dd id="assessment-id">-</dd></div><div><dt>Challenge</dt><dd id="challenge-id">-</dd></div><div><dt>Ruling</dt><dd id="ruling-id">-</dd></div><div><dt>Transaction</dt><dd id="tx">-</dd></div></dl><p id="status">Connect a wallet to submit an outcome case.</p><pre id="output">No on-chain record loaded.</pre><label>Deployed Studio contract<input id="contract-address" value="0x6c8142cDF59D770A831BFf9F503009B573E6Daea" /></label><a id="explorer" target="_blank" rel="noreferrer">Open contract explorer</a></aside>
+        </div>
+      </section>
+    </main>
+    <footer><span>Source-bound. Challengeable. Consensus-final.</span><a href="https://github.com/klopp78/outcomeappeal-genlayer">GitHub</a></footer>
+  </body>
+</html>

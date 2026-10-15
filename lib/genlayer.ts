@@ -3,7 +3,7 @@ import { studionet } from "genlayer-js/chains";
 import { TransactionStatus } from "genlayer-js/types";
 
 export const OUTCOME_APPEAL_CONTRACT_ADDRESS =
-  (process.env.NEXT_PUBLIC_OUTCOME_APPEAL_CONTRACT_ADDRESS ?? "0x0000000000000000000000000000000000000000") as `0x${string}`;
+  (process.env.NEXT_PUBLIC_OUTCOME_APPEAL_CONTRACT_ADDRESS ?? "0x6c8142cDF59D770A831BFf9F503009B573E6Daea") as `0x${string}`;
 
 export type WalletAddress = `0x${string}`;
 type Address = `0x${string}`;
