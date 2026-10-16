@@ -8,7 +8,7 @@ const $ = <T extends HTMLElement>(id: string) => document.getElementById(id) as 
 const ids: Record<string, string> = { case: "case-id", assessment: "assessment-id", challenge: "challenge-id", ruling: "ruling-id" };
 let wallet: Address | undefined;
 
-function contract(): Address { return $("contract-address") as HTMLInputElement ? ($("contract-address") as HTMLInputElement).value.trim() as Address : "0x6c8142cDF59D770A831BFf9F503009B573E6Daea"; }
+function contract(): Address { return $("contract-address") as HTMLInputElement ? ($("contract-address") as HTMLInputElement).value.trim() as Address : "0xb6Ab1351FeFDD395Bf229343971Fa5998ADA9579"; }
 function setStatus(message: string, phase = "READY") { $("status").textContent = message; $("phase").textContent = phase; }
 function explorer(path: "address" | "tx", value: string) { return `https://explorer-studio.genlayer.com/${path}/${value}`; }
 function output(value: unknown) { $("output").textContent = typeof value === "string" ? value : JSON.stringify(value, null, 2); }
