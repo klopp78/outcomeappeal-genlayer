@@ -4,10 +4,10 @@ OutcomeAppeal is a challengeable consensus court for disputed public outcomes. I
 
 ## Workflow
 
-1. `register_case` records a title, claimed outcome, two public sources, and a challenge window. Validators render both sources and commit immutable SHA-256 snapshot hashes.
-2. `assess_case` renders the baseline sources plus fresh assessment evidence. Validators independently judge the result as `upheld`, `rejected`, or `inconclusive`, returning an `asm_*` receipt.
-3. `challenge_assessment` accepts counterevidence only during the stored window and creates a `chg_*` record bound to its source snapshot.
-4. `resolve_challenge` has validators re-evaluate the original sources with counterevidence. `finalize_ruling` produces a `rul_*` receipt only after a challenge is resolved or the window closes.
+1. `register_case` renders two public sources once, normalizes each into a 3,200-character evidence snapshot, and stores the bounded content plus an immutable SHA-256 commitment.
+2. `assess_case` adds one admitted assessment snapshot, then evaluates it together with the stored baseline snapshots. Validators compare the consequential verdict and evidence commitment, never free-form model prose.
+3. `challenge_assessment` accepts counterevidence only during the stored window and records its own immutable, bounded snapshot as a `chg_*` record.
+4. `resolve_challenge` never re-fetches the web: it evaluates the stored baseline, assessment, and counterevidence snapshots, verifies their bindings, and produces a final `rul_*` receipt after resolution or the window closes.
 
 Every consequential record stores canonical source URLs and collision-resistant snapshot commitments. The app writes directly to the Studio contract, waits for consensus acceptance, extracts returned IDs, and reads records back on-chain.
 
