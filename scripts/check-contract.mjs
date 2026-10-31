@@ -3,15 +3,13 @@ import assert from "node:assert/strict";
 
 const source = readFileSync("contracts/outcome_appeal.py", "utf8");
 for (const marker of [
-  "class OutcomeAppeal(gl.Contract)", "register_case", "assess_case",
-  "challenge_assessment", "resolve_challenge", "finalize_ruling",
-  "get_case", "get_assessment", "get_challenge", "get_ruling",
+  "class OutcomeAppeal(gl.Contract)", "create_payment_case", "open_payment_appeal",
+  "respond_to_appeal", "resolve_payment_appeal", "settle_payment_appeal",
+  "release_unappealed_payment", "recover_unresponded_appeal", "gl.public.write.payable",
   "gl.vm.run_nondet_unsafe", "gl.nondet.web.render", "gl.nondet.exec_prompt",
-  "baseline_snapshot_commitments", "baseline_evidence", "assessment_evidence",
-  "counterevidence", "SNAPSHOT_LIMIT = 3200", "_bounded_text",
-  "snapshot_binding_mismatch", "_decision_equal", "challenge_window_still_open", "hashlib.sha256",
-]) assert.ok(source.includes(marker), `missing contract integrity marker: ${marker}`);
-assert.ok(!source.includes("hash("), "non-cryptographic hash must not be used");
-assert.match(source, /evidence = list\(case\["baseline_evidence"\]\) \+ \[assessment\["assessment_evidence"\], challenge\["counterevidence"\]\]/);
-assert.match(source, /keys = \["outcome", "evidence_commitment", "assessment_hash" if stage == "assessment" else "resolution_hash"\]/);
-console.log("OutcomeAppeal contract integrity checks passed");
+  "payment_commitment", "evidence_commitment", "merchant_bond_wei", "hashlib.sha256",
+  "only_payer_can_open_appeal", "only_named_merchant_can_respond", "merchant_response_required",
+]) assert.ok(source.includes(marker), `missing payment-recourse integrity marker: ${marker}`);
+assert.ok(!/[^_]\bhash\(/.test(source), "non-cryptographic hash must not be used");
+assert.match(source, /emit_transfer\(value=payment \+ claimant_bond \+ merchant_bond\)/);
+console.log("OutcomeAppeal v2 payment-recourse contract checks passed");

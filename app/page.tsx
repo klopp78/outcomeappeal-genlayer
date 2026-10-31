@@ -1,94 +1,31 @@
 "use client";
 
 import { useState, type ReactNode } from "react";
-import { OUTCOME_APPEAL_CONTRACT_ADDRESS, assessCase, challengeCase, compactError, connectWallet, explorerAddress, finalizeRuling, readRecord, resolveChallenge, submitCase, type WalletAddress } from "@/lib/genlayer";
+import { OUTCOME_APPEAL_CONTRACT_ADDRESS, compactError, connectWallet, createPaymentCase, explorerAddress, openPaymentAppeal, readRecord, resolvePaymentAppeal, respondToAppeal, settlePaymentAppeal, type WalletAddress } from "@/lib/genlayer";
 
-type Step = "register" | "assess" | "challenge" | "finalize" | "read";
+type Step = "fund" | "appeal" | "respond" | "resolve" | "settle" | "read";
+const exampleNonce = "2f1d1c9e94875adf3872e9c31bb2d50a614811e8bbd38491f10d2b6504528af0";
 
 export default function Home() {
-  const [contractAddress, setContractAddress] = useState(OUTCOME_APPEAL_CONTRACT_ADDRESS);
+  const [address, setAddress] = useState(OUTCOME_APPEAL_CONTRACT_ADDRESS);
   const [wallet, setWallet] = useState<WalletAddress | null>(null);
-  const [status, setStatus] = useState("Deploy the contract in Studio, enter its address, then create a disputed outcome case.");
-  const [result, setResult] = useState("");
   const [busy, setBusy] = useState<Step | null>(null);
-  const [caseForm, setCaseForm] = useState({ title: "Will the announced policy take effect by the stated deadline?", outcome: "The policy takes effect by the stated deadline.", primary: "https://www.whitehouse.gov/", corroborating: "https://www.reuters.com/", window: "3600" });
-  const [caseId, setCaseId] = useState("case_");
-  const [assessmentId, setAssessmentId] = useState("asm_");
-  const [challengeId, setChallengeId] = useState("chg_");
-  const [evidence, setEvidence] = useState("https://apnews.com/");
-  const [counterEvidence, setCounterEvidence] = useState("https://www.bbc.com/news");
-  const [readKind, setReadKind] = useState<"get_case" | "get_assessment" | "get_challenge" | "get_ruling">("get_case");
-  const [readId, setReadId] = useState("case_");
-
-  const address = contractAddress as `0x${string}`;
-  async function withWallet(step: Step, action: (account: WalletAddress) => Promise<{ id: string; explorer?: string }>) {
-    try {
-      setBusy(step); setResult("");
-      const account = wallet ?? await connectWallet();
-      setWallet(account);
-      const response = await action(account);
-      setStatus(`Accepted ${step} transaction: ${response.id}`);
-      setResult(JSON.stringify(response, null, 2));
-      if (response.id.startsWith("case_")) { setCaseId(response.id); setReadId(response.id); }
-      if (response.id.startsWith("asm_")) { setAssessmentId(response.id); setReadId(response.id); }
-      if (response.id.startsWith("chg_")) { setChallengeId(response.id); setReadId(response.id); }
-      if (response.id.startsWith("rul_")) setReadId(response.id);
-    } catch (error) { setStatus(compactError(error)); } finally { setBusy(null); }
+  const [status, setStatus] = useState("Deploy OutcomeAppeal v2 in Studio, enter its address, then fund a payment case.");
+  const [result, setResult] = useState("");
+  const [payment, setPayment] = useState({ merchant: "0x0000000000000000000000000000000000000001", orderReference: "agent-order-demo-001", paymentEvidence: "https://www.reuters.com/", termsUrl: "https://www.whitehouse.gov/", appealWindow: "3600", nonce: exampleNonce, amountWei: "1000000000000000" });
+  const [appeal, setAppeal] = useState({ caseId: "pay_", resolution: "refund", claimantEvidence: "https://apnews.com/", bondWei: "100000000000000" });
+  const [response, setResponse] = useState({ appealId: "app_", merchantEvidence: "https://www.bbc.com/news", bondWei: "100000000000000" });
+  const [resolutionId, setResolutionId] = useState("res_");
+  const [readKind, setReadKind] = useState<"get_case" | "get_appeal" | "get_resolution">("get_case");
+  const [readId, setReadId] = useState("pay_");
+  const target = address as `0x${string}`;
+  async function run(step: Step, action: (account: WalletAddress) => Promise<{ id: string }>) {
+    try { setBusy(step); setResult(""); const account = wallet ?? await connectWallet(); setWallet(account); const tx = await action(account); setStatus(`Consensus accepted: ${tx.id}`); setResult(JSON.stringify(tx, null, 2)); if (tx.id.startsWith("pay_")) { setAppeal({ ...appeal, caseId: tx.id }); setReadId(tx.id); } if (tx.id.startsWith("app_")) { setResponse({ ...response, appealId: tx.id }); setReadId(tx.id); } if (tx.id.startsWith("res_")) { setResolutionId(tx.id); setReadId(tx.id); setReadKind("get_resolution"); } } catch (error) { setStatus(compactError(error)); } finally { setBusy(null); }
   }
-  async function read() {
-    try { setBusy("read"); setResult(""); const record = await readRecord(readKind, readId, address); setStatus(`Loaded ${readKind}.`); setResult(typeof record === "string" ? record : JSON.stringify(record, null, 2)); } catch (error) { setStatus(compactError(error)); } finally { setBusy(null); }
-  }
-  return (
-    <main className="min-h-screen bg-[#f5f7fb] text-[#15171a]">
-      <header className="border-b border-[#d7dee9] bg-white">
-        <div className="mx-auto flex max-w-6xl flex-wrap items-center justify-between gap-4 px-5 py-5 lg:px-8">
-          <div><span className="field-label">GenLayer Project</span><h1 className="text-2xl font-semibold">OutcomeAppeal</h1></div>
-          <a className="action-button" href={explorerAddress(address)} rel="noreferrer" target="_blank">Studio explorer</a>
-        </div>
-      </header>
-      <section className="mx-auto max-w-6xl px-5 py-8 lg:px-8">
-        <div className="grid gap-7 lg:grid-cols-[1.1fr_0.9fr]">
-          <div>
-            <span className="pill">Challengeable public-outcome rulings</span>
-            <h2 className="mt-5 max-w-3xl text-4xl font-semibold leading-tight">A real appeal path for outcomes that are not black and white.</h2>
-            <p className="mt-5 max-w-3xl text-lg leading-8 text-[#60707b]">OutcomeAppeal captures an immutable evidence baseline, asks GenLayer validators for an initial ruling, accepts time-bound counterevidence, then finalizes a durable consensus receipt.</p>
-          </div>
-          <aside className="tool-panel"><span className="field-label">Live contract</span><label className="grid gap-2"><span>Studio contract address</span><input className="text-input" value={contractAddress} onChange={(event) => setContractAddress(event.target.value)} /></label><button className="action-button mt-4" onClick={() => connectWallet().then(setWallet).then(() => setStatus("Wallet connected.")).catch((error) => setStatus(compactError(error)))}>{wallet ? `Connected ${wallet.slice(0, 6)}...${wallet.slice(-4)}` : "Connect wallet"}</button></aside>
-        </div>
-      </section>
-      <section className="mx-auto grid max-w-6xl gap-5 px-5 pb-5 md:grid-cols-2 lg:px-8">
-        <Panel number="01" title="Create a case" detail="Two public sources are rendered and hashed before the claim is assessable.">
-          <Field label="Case title" value={caseForm.title} onChange={(value) => setCaseForm({ ...caseForm, title: value })} />
-          <Field label="Claimed outcome" value={caseForm.outcome} onChange={(value) => setCaseForm({ ...caseForm, outcome: value })} />
-          <Field label="Primary source URL" value={caseForm.primary} onChange={(value) => setCaseForm({ ...caseForm, primary: value })} />
-          <Field label="Corroborating source URL" value={caseForm.corroborating} onChange={(value) => setCaseForm({ ...caseForm, corroborating: value })} />
-          <Field label="Challenge window seconds" value={caseForm.window} onChange={(value) => setCaseForm({ ...caseForm, window: value })} />
-          <button className="action-button primary" disabled={busy !== null} onClick={() => withWallet("register", (walletAddress) => submitCase({ wallet: walletAddress, ...caseForm, contractAddress: address }))}>{busy === "register" ? "Awaiting consensus" : "Register case"}</button>
-        </Panel>
-        <Panel number="02" title="Assess the claim" detail="Validators compare the registered baseline with a new evidence surface.">
-          <Field label="Case ID" value={caseId} onChange={setCaseId} />
-          <Field label="Assessment evidence URL" value={evidence} onChange={setEvidence} />
-          <button className="action-button primary" disabled={busy !== null} onClick={() => withWallet("assess", (walletAddress) => assessCase({ wallet: walletAddress, caseId, evidence, contractAddress: address }))}>{busy === "assess" ? "Awaiting consensus" : "Assess case"}</button>
-        </Panel>
-        <Panel number="03" title="Challenge and resolve" detail="A challenge is only valid during the case's stored window; resolution reruns consensus over the counterevidence.">
-          <Field label="Case ID" value={caseId} onChange={setCaseId} />
-          <Field label="Assessment ID" value={assessmentId} onChange={setAssessmentId} />
-          <Field label="Counterevidence URL" value={counterEvidence} onChange={setCounterEvidence} />
-          <div className="flex flex-wrap gap-3"><button className="action-button primary" disabled={busy !== null} onClick={() => withWallet("challenge", (walletAddress) => challengeCase({ wallet: walletAddress, caseId, assessmentId, evidence: counterEvidence, contractAddress: address }))}>{busy === "challenge" ? "Awaiting consensus" : "Challenge"}</button><button className="action-button" disabled={busy !== null} onClick={() => withWallet("challenge", (walletAddress) => resolveChallenge({ wallet: walletAddress, caseId, challengeId, contractAddress: address }))}>Resolve challenge</button></div>
-          <Field label="Challenge ID" value={challengeId} onChange={setChallengeId} />
-        </Panel>
-        <Panel number="04" title="Finalize and inspect" detail="Finalization enforces the challenge window and binds the outcome to baseline, assessment, and resolution hashes.">
-          <Field label="Case ID" value={caseId} onChange={setCaseId} />
-          <button className="action-button primary" disabled={busy !== null} onClick={() => withWallet("finalize", (walletAddress) => finalizeRuling({ wallet: walletAddress, caseId, contractAddress: address }))}>{busy === "finalize" ? "Awaiting consensus" : "Finalize ruling"}</button>
-          <label className="grid gap-2"><span className="field-label">Read a record</span><select className="text-input" value={readKind} onChange={(event) => setReadKind(event.target.value as typeof readKind)}><option value="get_case">Case</option><option value="get_assessment">Assessment</option><option value="get_challenge">Challenge</option><option value="get_ruling">Ruling</option></select></label>
-          <Field label="Record ID" value={readId} onChange={setReadId} />
-          <button className="action-button" disabled={busy !== null} onClick={read}>{busy === "read" ? "Reading" : "Read on-chain record"}</button>
-        </Panel>
-      </section>
-      <section className="mx-auto max-w-6xl px-5 pb-10 lg:px-8"><div className="result-card"><span className="field-label">Transaction status</span><p className="leading-7 text-[#60707b]">{status}</p>{result ? <pre className="mt-4 overflow-x-auto text-sm">{result}</pre> : null}</div></section>
-    </main>
-  );
+  async function read() { try { setBusy("read"); const data = await readRecord(readKind, readId, target); setStatus(`Loaded ${readKind} from final on-chain state.`); setResult(typeof data === "string" ? data : JSON.stringify(data, null, 2)); } catch (error) { setStatus(compactError(error)); } finally { setBusy(null); } }
+  return <main className="min-h-screen bg-[#f5f7fb] text-[#15171a]"><header className="border-b border-[#d7dee9] bg-white"><div className="mx-auto flex max-w-6xl flex-wrap items-center justify-between gap-4 px-5 py-5 lg:px-8"><div><span className="field-label">GenLayer Project · v2</span><h1 className="text-2xl font-semibold">OutcomeAppeal</h1></div><a className="action-button" href={explorerAddress(target)} rel="noreferrer" target="_blank">Studio explorer</a></div></header><section className="mx-auto max-w-6xl px-5 py-8 lg:px-8"><div className="grid gap-7 lg:grid-cols-[1.1fr_0.9fr]"><div><span className="pill">Payment recourse for AI agents</span><h2 className="mt-5 max-w-3xl text-4xl font-semibold leading-tight">When an agent spends, both payment and recourse need enforceable boundaries.</h2><p className="mt-5 max-w-3xl text-lg leading-8 text-[#60707b]">OutcomeAppeal v2 escrows a named payment, binds the payer, merchant, order, amount and evidence, then uses GenLayer consensus to settle a real refund or release path.</p></div><aside className="tool-panel"><span className="field-label">Live contract</span><Field label="Studio contract address" value={address} onChange={setAddress} /><button className="action-button mt-4" onClick={() => connectWallet().then(setWallet).then(() => setStatus("Wallet connected.")).catch((error) => setStatus(compactError(error)))}>{wallet ? `Connected ${wallet.slice(0, 6)}...${wallet.slice(-4)}` : "Connect wallet"}</button></aside></div></section><section className="mx-auto grid max-w-6xl gap-5 px-5 pb-5 md:grid-cols-2 lg:px-8"><Panel number="01" title="Fund a payment case" detail="The payer escrows GEN and commits the recipient, order, terms, payment evidence and expiry in one canonical record."><Fields data={payment} setData={setPayment} labels={{ merchant: "Merchant address", orderReference: "Order reference", paymentEvidence: "Payment evidence URL", termsUrl: "Terms URL", appealWindow: "Appeal window seconds", nonce: "64-hex creation nonce", amountWei: "Escrow amount (wei)" }} /><button className="action-button primary" disabled={busy !== null} onClick={() => run("fund", (account) => createPaymentCase({ wallet: account, ...payment, address: target }))}>{busy === "fund" ? "Awaiting consensus" : "Fund payment case"}</button></Panel><Panel number="02" title="Open a bonded appeal" detail="Only the bound payer may challenge before expiry. A claimant bond makes the dispute path costly to abuse."><Fields data={appeal} setData={setAppeal} labels={{ caseId: "Payment case ID", resolution: "Requested resolution (refund or partial_refund)", claimantEvidence: "Claimant evidence URL", bondWei: "Claimant bond (wei)" }} /><button className="action-button primary" disabled={busy !== null} onClick={() => run("appeal", (account) => openPaymentAppeal({ wallet: account, ...appeal, address: target }))}>{busy === "appeal" ? "Awaiting consensus" : "Open payment appeal"}</button></Panel><Panel number="03" title="Respond and adjudicate" detail="Only the named merchant may respond, posting at least the claimant bond. Validators render terms and both evidence bundles independently."><Fields data={response} setData={setResponse} labels={{ appealId: "Appeal ID", merchantEvidence: "Merchant evidence URL", bondWei: "Merchant bond (wei)" }} /><div className="flex flex-wrap gap-3"><button className="action-button primary" disabled={busy !== null} onClick={() => run("respond", (account) => respondToAppeal({ wallet: account, ...response, address: target }))}>{busy === "respond" ? "Awaiting consensus" : "Respond with bond"}</button><button className="action-button" disabled={busy !== null} onClick={() => run("resolve", (account) => resolvePaymentAppeal({ wallet: account, appealId: response.appealId, address: target }))}>Resolve by consensus</button></div></Panel><Panel number="04" title="Settle and inspect" detail="Settlement uses the final consensus decision to transfer the payment escrow and both bonds. Readback is from finalized contract state."><Field label="Resolution ID" value={resolutionId} onChange={setResolutionId} /><button className="action-button primary" disabled={busy !== null} onClick={() => run("settle", (account) => settlePaymentAppeal({ wallet: account, resolutionId, address: target }))}>Settle payment appeal</button><label className="grid gap-2"><span className="field-label">Read record</span><select className="text-input" value={readKind} onChange={(event) => setReadKind(event.target.value as typeof readKind)}><option value="get_case">Payment case</option><option value="get_appeal">Appeal</option><option value="get_resolution">Resolution</option></select></label><Field label="Record ID" value={readId} onChange={setReadId} /><button className="action-button" disabled={busy !== null} onClick={read}>Read finalized state</button></Panel></section><section className="mx-auto max-w-6xl px-5 pb-10 lg:px-8"><div className="result-card"><span className="field-label">Transaction status</span><p className="leading-7 text-[#60707b]">{status}</p>{result ? <pre className="mt-4 overflow-x-auto text-sm">{result}</pre> : null}</div></section></main>;
 }
 
 function Panel({ number, title, detail, children }: { number: string; title: string; detail: string; children: ReactNode }) { return <section className="tool-panel grid gap-4"><span className="field-label">{number}</span><div><h2 className="text-2xl font-semibold">{title}</h2><p className="mt-2 leading-7 text-[#60707b]">{detail}</p></div>{children}</section>; }
 function Field({ label, value, onChange }: { label: string; value: string; onChange: (value: string) => void }) { return <label className="grid gap-2"><span className="field-label">{label}</span><input className="text-input" value={value} onChange={(event) => onChange(event.target.value)} /></label>; }
+function Fields<T extends Record<string, string>>({ data, setData, labels }: { data: T; setData: (value: T) => void; labels: Record<keyof T, string> }) { return <>{(Object.keys(labels) as (keyof T)[]).map((key) => <Field key={String(key)} label={labels[key]} value={data[key]} onChange={(value) => setData({ ...data, [key]: value })} />)}</>; }
